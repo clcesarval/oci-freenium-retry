@@ -85,8 +85,16 @@ jobs:
           JOB_STATUS: ${{ job.status }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
-          if [ "$JOB_STATUS" = "success" ]; then EMOJI="✅"; else EMOJI="❌"; fi
-          MESSAGE="${EMOJI} OCI Always Free Auto-Retry: ${JOB_STATUS}\n${RUN_URL}"
+          INSTANCE_OCID=$(jq -r '.instance_ocid // empty' state.json)
+          LAST_ERROR=$(jq -r '.last_error // empty' state.json)
+          if [ -n "$INSTANCE_OCID" ]; then
+            RESULT="✅ VM criada ou já existente na Oracle."
+          elif [[ "$LAST_ERROR" == *"Out of host capacity"* ]]; then
+            RESULT="⏳ VM ainda não criada: Oracle sem capacidade. Nova tentativa automática em 20 minutos."
+          else
+            RESULT="❌ VM não criada: ${LAST_ERROR:-erro desconhecido}."
+          fi
+          MESSAGE="${RESULT}\nStatus do workflow: ${JOB_STATUS}\n${RUN_URL}"
           curl --fail --silent --show-error --request POST \
             --data-urlencode "chat_id=${TELEGRAM_CHAT_ID}" \
             --data-urlencode "text=${MESSAGE}" \
