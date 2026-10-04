@@ -2,7 +2,7 @@ name: OCI Always Free Auto-Retry
 
 on:
   schedule:
-    - cron: "0 * * * *"
+    - cron: "0 */3 * * *"
   workflow_dispatch:
 
 permissions:
@@ -90,7 +90,7 @@ jobs:
           if [ -n "$INSTANCE_OCID" ]; then
             RESULT="✅ VM criada ou já existente na Oracle."
           elif [[ "$LAST_ERROR" == *"Out of host capacity"* ]]; then
-            RESULT="⏳ VM ainda não criada: Oracle sem capacidade. Nova tentativa automática em até 1 hora."
+            RESULT="⏳ VM ainda não criada: Oracle sem capacidade. Nova tentativa automática em até 3 horas."
           else
             RESULT="❌ VM não criada: ${LAST_ERROR:-erro desconhecido}."
           fi
