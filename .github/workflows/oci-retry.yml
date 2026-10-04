@@ -76,3 +76,18 @@ jobs:
             git pull --rebase origin main
             git push
           fi
+
+      - name: Notify Telegram
+        if: always()
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          JOB_STATUS: ${{ job.status }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          if [ "$JOB_STATUS" = "success" ]; then EMOJI="✅"; else EMOJI="❌"; fi
+          MESSAGE="${EMOJI} OCI Always Free Auto-Retry: ${JOB_STATUS}\n${RUN_URL}"
+          curl --fail --silent --show-error --request POST \
+            --data-urlencode "chat_id=${TELEGRAM_CHAT_ID}" \
+            --data-urlencode "text=${MESSAGE}" \
+            "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage"
